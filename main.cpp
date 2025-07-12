@@ -6,26 +6,26 @@
 #include <iomanip>
 #include <atomic>
 #include <sstream>
-#include <windows.h> // Для работы с консолью Windows
+#include <windows.h> // Р”Р»СЏ СЂР°Р±РѕС‚С‹ СЃ РєРѕРЅСЃРѕР»СЊСЋ Windows
 
-// Глобальный мьютекс для синхронизации вывода в консоль
+// Р“Р»РѕР±Р°Р»СЊРЅС‹Р№ РјСЊСЋС‚РµРєСЃ РґР»СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РІС‹РІРѕРґР° РІ РєРѕРЅСЃРѕР»СЊ
 std::mutex g_cout_mutex;
 
-// Функция для установки позиции курсора
+// Р¤СѓРЅРєС†РёСЏ РґР»СЏ СѓСЃС‚Р°РЅРѕРІРєРё РїРѕР·РёС†РёРё РєСѓСЂСЃРѕСЂР°
 void set_cursor_position(int x, int y) {
     COORD coord = { static_cast<SHORT>(x), static_cast<SHORT>(y) };
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
-// Класс для управления прогресс-баром потока
+// РљР»Р°СЃСЃ РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РїСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂРѕРј РїРѕС‚РѕРєР°
 class ProgressBar {
 private:
-    const int thread_num;      // Номер потока по порядку
-    const std::thread::id tid; // Идентификатор потока
-    const int length;          // Длина прогресс-бара
-    int progress = 0;          // Текущий прогресс
+    const int thread_num;      // РќРѕРјРµСЂ РїРѕС‚РѕРєР° РїРѕ РїРѕСЂСЏРґРєСѓ
+    const std::thread::id tid; // РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕС‚РѕРєР°
+    const int length;          // Р”Р»РёРЅР° РїСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂР°
+    int progress = 0;          // РўРµРєСѓС‰РёР№ РїСЂРѕРіСЂРµСЃСЃ
     std::chrono::time_point<std::chrono::steady_clock> start_time;
-    int line_position;         // Позиция строки этого потока
+    int line_position;         // РџРѕР·РёС†РёСЏ СЃС‚СЂРѕРєРё СЌС‚РѕРіРѕ РїРѕС‚РѕРєР°
 
 public:
     ProgressBar(int num, std::thread::id id, int len, int pos)
@@ -34,18 +34,18 @@ public:
         print_initial();
     }
 
-    // Вывод начальной информации о потоке
+    // Р’С‹РІРѕРґ РЅР°С‡Р°Р»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё Рѕ РїРѕС‚РѕРєРµ
     void print_initial() {
         std::lock_guard<std::mutex> lock(g_cout_mutex);
         set_cursor_position(0, line_position);
-        std::cout << "Поток " << std::setw(2) << thread_num
+        std::cout << "РџРѕС‚РѕРє " << std::setw(2) << thread_num
             << " (ID: " << tid << "): [";
         for (int i = 0; i < length; i++) std::cout << " ";
         std::cout << "]   0%";
         std::cout.flush();
     }
 
-    // Обновление прогресс-бара
+    // РћР±РЅРѕРІР»РµРЅРёРµ РїСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂР°
     void update() {
         if (progress >= length) return;
 
@@ -59,14 +59,14 @@ public:
         std::cout.flush();
     }
 
-    // Вывод итоговой информации
+    // Р’С‹РІРѕРґ РёС‚РѕРіРѕРІРѕР№ РёРЅС„РѕСЂРјР°С†РёРё
     void print_final() {
         auto end_time = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
         std::lock_guard<std::mutex> lock(g_cout_mutex);
         set_cursor_position(25 + length, line_position);
-        std::cout << " Время: " << duration.count() << " мс";
+        std::cout << " Р’СЂРµРјСЏ: " << duration.count() << " РјСЃ";
         std::cout.flush();
     }
 
@@ -75,11 +75,11 @@ public:
     }
 };
 
-// Функция, выполняемая в каждом потоке
+// Р¤СѓРЅРєС†РёСЏ, РІС‹РїРѕР»РЅСЏРµРјР°СЏ РІ РєР°Р¶РґРѕРј РїРѕС‚РѕРєРµ
 void calculation_task(int thread_num, int progress_length, int line_pos) {
     ProgressBar pb(thread_num, std::this_thread::get_id(), progress_length, line_pos);
 
-    // Имитация расчета
+    // РРјРёС‚Р°С†РёСЏ СЂР°СЃС‡РµС‚Р°
     while (!pb.is_complete()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 200));
         pb.update();
@@ -90,29 +90,29 @@ void calculation_task(int thread_num, int progress_length, int line_pos) {
 int main() {
     std::setlocale(LC_ALL, "Russian");
 
-    const int num_threads = 5;      // Количество потоков
-    const int progress_length = 30; // Длина прогресс-бара
+    const int num_threads = 5;      // РљРѕР»РёС‡РµСЃС‚РІРѕ РїРѕС‚РѕРєРѕРІ
+    const int progress_length = 30; // Р”Р»РёРЅР° РїСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂР°
 
-    // Очищаем консоль и устанавливаем курсор в начало
+    // РћС‡РёС‰Р°РµРј РєРѕРЅСЃРѕР»СЊ Рё СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРј РєСѓСЂСЃРѕСЂ РІ РЅР°С‡Р°Р»Рѕ
     system("cls");
-    std::cout << "Многопоточный расчет с прогресс-барами:\n\n";
+    std::cout << "РњРЅРѕРіРѕРїРѕС‚РѕС‡РЅС‹Р№ СЂР°СЃС‡РµС‚ СЃ РїСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂР°РјРё:\n\n";
 
-    // Создаем вектор потоков
+    // РЎРѕР·РґР°РµРј РІРµРєС‚РѕСЂ РїРѕС‚РѕРєРѕРІ
     std::vector<std::thread> threads;
     threads.reserve(num_threads);
 
-    // Создаем и запускаем потоки
+    // РЎРѕР·РґР°РµРј Рё Р·Р°РїСѓСЃРєР°РµРј РїРѕС‚РѕРєРё
     for (int i = 1; i <= num_threads; ++i) {
         threads.emplace_back(calculation_task, i, progress_length, 2 + i);
     }
 
-    // Ожидаем завершения всех потоков
+    // РћР¶РёРґР°РµРј Р·Р°РІРµСЂС€РµРЅРёСЏ РІСЃРµС… РїРѕС‚РѕРєРѕРІ
     for (auto& t : threads) {
         t.join();
     }
 
-    // Перемещаем курсор в конец
+    // РџРµСЂРµРјРµС‰Р°РµРј РєСѓСЂСЃРѕСЂ РІ РєРѕРЅРµС†
     set_cursor_position(0, 3 + num_threads);
-    std::cout << "\nВсе потоки завершили работу.\n";
+    std::cout << "\nР’СЃРµ РїРѕС‚РѕРєРё Р·Р°РІРµСЂС€РёР»Рё СЂР°Р±РѕС‚Сѓ.\n";
     return 0;
 }
